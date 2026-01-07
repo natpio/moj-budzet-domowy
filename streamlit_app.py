@@ -65,7 +65,7 @@ if check_password():
         </style>
         """, unsafe_allow_html=True)
 
-    # --- POŁĄCZENIE Z ARKUSZEM (Z OPTYMALIZACJĄ) ---
+    # --- POŁĄCZENIE I OPTYMALIZACJA API ---
     @st.cache_resource
     def get_client():
         creds_dict = st.secrets["gcp_service_account"]
@@ -73,33 +73,38 @@ if check_password():
         creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=scope)
         return gspread.authorize(creds)
 
-    # Cache danych na 2 minuty, aby nie przekroczyć limitu Read Requests
-    @st.cache_data(ttl=120)
+    @st.cache_data(ttl=60) # Dane odświeżają się co minutę, oszczędzając limity API
     def load_all_data():
         client = get_client()
         sh = client.open("Budzet_Data")
-        names = ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]
+        sheets = ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]
         data = {}
-        for name in names:
+        for name in sheets:
             data[name] = pd.DataFrame(sh.worksheet(name).get_all_records())
-            time.sleep(0.2) # Krótka przerwa dla API
+            time.sleep(0.3) # Przerwa zapobiegająca Quota Exceeded
         return data
 
     def get_now(): return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Pobieranie danych z cache
+    # Pobieranie danych
     try:
-        all_df = load_all_data()
+        all_data = load_all_data()
+        df_inc = all_data["Przychody"]
+        df_exp = all_data["Wydatki"]
+        df_fix = all_data["Koszty_Stale"]
+        df_rat = all_data["Raty"]
+        df_sav = all_data["Oszczednosci"]
+        df_shp = all_data["Zakupy"]
+        df_tsk = all_data["Zadania"]
+        df_pla = all_data["Planowanie"]
     except Exception as e:
-        st.error("🤠 Serwer Google odpoczywa. Odśwież za chwilę...")
+        st.error(f"🤠 Problem z połączeniem. Spróbuj odświeżyć stronę za 30 sekund.")
         st.stop()
-
-    df_inc, df_exp, df_fix, df_rat, df_sav, df_shp, df_tsk, df_pla = [all_df[n] for n in ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]]
 
     # --- OBLICZENIA ---
     today = date.today()
     dni_m = calendar.monthrange(today.year, today.month)[1] - today.day + 1
-    p800 = 1600 # Stała kwota dla uproszczenia
+    p800 = 1600 # Zakładamy dwoje dzieci
     
     suma_rat = 0
     if not df_rat.empty:
@@ -116,25 +121,27 @@ if check_password():
     # --- SIDEBAR ---
     with st.sidebar:
         st.markdown("<h1 style='text-align:center;'>🤠 SEJF</h1>", unsafe_allow_html=True)
-        # Sejf pobieramy zawsze na świeżo, bo to krytyczne dane
-        client = get_client()
-        s_sav = client.open("Budzet_Data").worksheet("Oszczednosci")
         try:
-            sav_val = float(str(s_sav.acell('A2').value).replace(',', '.'))
+            # Sejf odczytujemy bezpośrednio dla pewności stanu
+            client = get_client()
+            ws_sav = client.open("Budzet_Data").worksheet("Oszczednosci")
+            sav_val = float(str(ws_sav.acell('A2').value).replace(',', '.'))
+            last_trans = float(str(ws_sav.acell('B2').value).replace(',', '.'))
         except:
-            sav_val = 0.0
+            sav_val, last_trans = 0.0, 0.0
+        
         st.metric("ZŁOTO W SEJFIE", f"{sav_val:,.2f} PLN")
         
         with st.expander("💰 WYPŁATA"):
             amt = st.number_input("Ile dukatów?", min_value=0.0, key="side_w")
             if st.button("POBIERZ Z SEJFU"):
-                s_sav.update_acell('A2', str(sav_val - amt))
+                ws_sav.update_acell('A2', str(sav_val - amt))
                 client.open("Budzet_Data").worksheet("Przychody").append_row([get_now(), "WYPŁATA ZE SKARBCA", amt])
-                st.cache_data.clear() # Czyścimy cache po zmianie
+                st.cache_data.clear()
                 st.rerun()
 
     # --- UKŁAD GŁÓWNY ---
-    st.markdown("<h1 style='text-align: center;'>📜 KSIĘGA RACHUNKOWA</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>📜 KSIĘGA RACHUNKOWA RANCZA</h1>", unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("💰 PORTFEL", f"{balance:,.2f} PLN")
     c2.metric("☀️ NA DZIEŃ", f"{daily:,.2f} PLN")
@@ -143,13 +150,120 @@ if check_password():
 
     tabs = st.tabs(["🤠 Dashboard", "💸 Wpisy", "🏠 Stałe & Raty", "📅 Plany", "🛒 Listy"])
 
-    with tabs[1]: # Sekcja wpisów - przykład dodawania
-        col_i, col_e = st.columns(2)
-        with col_i:
+    with tabs[0]:
+        if not df_exp.empty:
+            fig = px.pie(df_exp, values='Kwota', names='Kategoria', hole=.4, template="plotly_white")
+            st.plotly_chart(fig, use_container_width=True)
+        if st.button("🏜️ ZAMKNIJ MIESIĄC", use_container_width=True):
+            ws_sav.update_acell('B2', str(balance))
+            ws_sav.update_acell('A2', str(sav_val + balance))
+            st.cache_data.clear()
+            st.balloons(); st.rerun()
+
+    with tabs[1]:
+        ci, ce = st.columns(2)
+        with ci:
             with st.form("f_inc"):
                 ni, ki = st.text_input("Skąd wpłata?"), st.number_input("Kwota")
-                if st.form_submit_button("DODAJ PRZYCHÓD"):
+                if st.form_submit_button("DODAJ DOCHÓD"):
                     client.open("Budzet_Data").worksheet("Przychody").append_row([get_now(), ni, ki])
-                    st.cache_data.clear()
-                    st.rerun()
-        # ... reszta formularzy analogicznie z st.cache_data.clear()
+                    st.cache_data.clear(); st.rerun()
+        with ce:
+            with st.form("f_exp"):
+                ne, ke = st.text_input("Na co?"), st.number_input("Kwota")
+                ka = st.selectbox("Kategoria", ["Jedzenie", "Dom", "Transport", "Rozrywka", "Inne"])
+                if st.form_submit_button("ZAKSIĘGUJ WYDATEK"):
+                    client.open("Budzet_Data").worksheet("Wydatki").append_row([get_now(), ne, ke, ka, "Zmienny"])
+                    st.cache_data.clear(); st.rerun()
+        
+        st.markdown("### 🖋️ Historia i Usuwanie")
+        df_exp["USUŃ"] = False
+        e_exp = st.data_editor(df_exp, num_rows="dynamic", use_container_width=True)
+        if st.button("Zapisz zmiany w historii"):
+            cl = e_exp[e_exp["USUŃ"] == False].drop(columns=["USUŃ"])
+            ws = client.open("Budzet_Data").worksheet("Wydatki")
+            ws.clear(); ws.append_row(["Data i Godzina", "Nazwa", "Kwota", "Kategoria", "Typ"])
+            if not cl.empty: ws.append_rows(cl.values.tolist())
+            st.cache_data.clear(); st.rerun()
+
+    with tabs[2]:
+        cf, cr = st.columns(2)
+        with cf:
+            with st.form("f_fix"):
+                nf, kf = st.text_input("Opłata stała"), st.number_input("Kwota", key="fix_k")
+                if st.form_submit_button("DODAJ STAŁĄ"):
+                    client.open("Budzet_Data").worksheet("Koszty_Stale").append_row([get_now(), nf, kf])
+                    st.cache_data.clear(); st.rerun()
+            df_fix["USUŃ"] = False
+            e_fix = st.data_editor(df_fix, use_container_width=True, key="ed_fix")
+            if st.button("Zapisz zmiany w Stałych"):
+                cl_f = e_fix[e_fix["USUŃ"] == False].drop(columns=["USUŃ"])
+                ws_f = client.open("Budzet_Data").worksheet("Koszty_Stale")
+                ws_f.clear(); ws_f.append_row(["Data i Godzina", "Nazwa", "Kwota"])
+                if not cl_f.empty: ws_f.append_rows(cl_f.values.tolist())
+                st.cache_data.clear(); st.rerun()
+
+        with cr:
+            with st.form("f_rat"):
+                nr, kr = st.text_input("Rata"), st.number_input("Kwota", key="rat_k")
+                ds, de = st.date_input("Start"), st.date_input("Koniec")
+                if st.form_submit_button("DODAJ RATĘ"):
+                    client.open("Budzet_Data").worksheet("Raty").append_row([nr, kr, str(ds), str(de)])
+                    st.cache_data.clear(); st.rerun()
+            df_rat["USUŃ"] = False
+            e_rat = st.data_editor(df_rat, use_container_width=True, key="ed_rat")
+            if st.button("Zatwierdź usuwanie rat"):
+                cl_r = e_rat[e_rat["USUŃ"] == False].drop(columns=["USUŃ"])
+                ws_r = client.open("Budzet_Data").worksheet("Raty")
+                ws_r.clear(); ws_r.append_row(["Rata", "Kwota", "Start", "Koniec"])
+                if not cl_r.empty: ws_r.append_rows(cl_r.values.tolist())
+                st.cache_data.clear(); st.rerun()
+
+    with tabs[3]:
+        with st.form("f_pla"):
+            pn, pk = st.text_input("Plan"), st.number_input("Kwota", key="pla_k")
+            pm = st.selectbox("Miesiąc", ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"])
+            if st.form_submit_button("PLANUJ"):
+                client.open("Budzet_Data").worksheet("Planowanie").append_row([get_now(), pn, pk, pm])
+                st.cache_data.clear(); st.rerun()
+        df_pla["USUŃ"] = False
+        e_pla = st.data_editor(df_pla, use_container_width=True)
+        if st.button("Zaktualizuj plany"):
+            cl_p = e_pla[e_pla["USUŃ"] == False].drop(columns=["USUŃ"])
+            ws_p = client.open("Budzet_Data").worksheet("Planowanie")
+            ws_p.clear(); ws_p.append_row(["Data i Godzina", "Cel", "Kwota", "Miesiąc"])
+            if not cl_p.empty: ws_p.append_rows(cl_p.values.tolist())
+            st.cache_data.clear(); st.rerun()
+
+    with tabs[4]:
+        cs, ct = st.columns(2)
+        with cs:
+            st.write("🛒 Zakupy")
+            with st.form("f_shp"):
+                it = st.text_input("Produkt")
+                if st.form_submit_button("DODAJ"):
+                    client.open("Budzet_Data").worksheet("Zakupy").append_row([get_now(), it])
+                    st.cache_data.clear(); st.rerun()
+            df_shp["USUŃ"] = False
+            e_shp = st.data_editor(df_shp, use_container_width=True, key="ed_shp")
+            if st.button("Usuń zaznaczone zakupy"):
+                cl_s = e_shp[e_shp["USUŃ"] == False].drop(columns=["USUŃ"])
+                ws_s = client.open("Budzet_Data").worksheet("Zakupy")
+                ws_s.clear(); ws_s.append_row(["Data i Godzina", "Produkt"])
+                if not cl_s.empty: ws_s.append_rows(cl_s.values.tolist())
+                st.cache_data.clear(); st.rerun()
+        with ct:
+            st.write("✅ Zadania")
+            with st.form("f_tsk"):
+                tn, td = st.text_input("Zadanie"), st.date_input("Termin")
+                if st.form_submit_button("DODAJ"):
+                    client.open("Budzet_Data").worksheet("Zadania").append_row([get_now(), tn, str(td), "Normalny"])
+                    st.cache_data.clear(); st.rerun()
+            df_tsk["USUŃ"] = False
+            e_tsk = st.data_editor(df_tsk, use_container_width=True, key="ed_tsk")
+            if st.button("Usuń zaznaczone zadania"):
+                cl_t = e_tsk[e_tsk["USUŃ"] == False].drop(columns=["USUŃ"])
+                ws_t = client.open("Budzet_Data").worksheet("Zadania")
+                ws_t.clear(); ws_t.append_row(["Data i Godzina", "Zadanie", "Termin", "Priorytet"])
+                if not cl_t.empty: ws_t.append_rows(cl_t.values.tolist())
+                st.cache_data.clear(); st.rerun()
