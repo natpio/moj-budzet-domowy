@@ -73,7 +73,7 @@ if check_password():
         creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=scope)
         return gspread.authorize(creds)
 
-    @st.cache_data(ttl=60) # Dane odświeżają się co minutę, oszczędzając limity API
+    @st.cache_data(ttl=60)
     def load_all_data():
         client = get_client()
         sh = client.open("Budzet_Data")
@@ -81,7 +81,7 @@ if check_password():
         data = {}
         for name in sheets:
             data[name] = pd.DataFrame(sh.worksheet(name).get_all_records())
-            time.sleep(0.3) # Przerwa zapobiegająca Quota Exceeded
+            time.sleep(0.3)
         return data
 
     def get_now(): return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -104,7 +104,7 @@ if check_password():
     # --- OBLICZENIA ---
     today = date.today()
     dni_m = calendar.monthrange(today.year, today.month)[1] - today.day + 1
-    p800 = 1600 # Zakładamy dwoje dzieci
+    p800 = 1600
     
     suma_rat = 0
     if not df_rat.empty:
@@ -121,24 +121,19 @@ if check_password():
     # --- SIDEBAR ---
     with st.sidebar:
         st.markdown("<h1 style='text-align:center;'>🤠 SEJF</h1>", unsafe_allow_html=True)
+        client = get_client()
+        ws_sav = client.open("Budzet_Data").worksheet("Oszczednosci")
         try:
-            # Sejf odczytujemy bezpośrednio dla pewności stanu
-            client = get_client()
-            ws_sav = client.open("Budzet_Data").worksheet("Oszczednosci")
             sav_val = float(str(ws_sav.acell('A2').value).replace(',', '.'))
-            last_trans = float(str(ws_sav.acell('B2').value).replace(',', '.'))
         except:
-            sav_val, last_trans = 0.0, 0.0
-        
+            sav_val = 0.0
         st.metric("ZŁOTO W SEJFIE", f"{sav_val:,.2f} PLN")
-        
         with st.expander("💰 WYPŁATA"):
             amt = st.number_input("Ile dukatów?", min_value=0.0, key="side_w")
             if st.button("POBIERZ Z SEJFU"):
                 ws_sav.update_acell('A2', str(sav_val - amt))
                 client.open("Budzet_Data").worksheet("Przychody").append_row([get_now(), "WYPŁATA ZE SKARBCA", amt])
-                st.cache_data.clear()
-                st.rerun()
+                st.cache_data.clear(); st.rerun()
 
     # --- UKŁAD GŁÓWNY ---
     st.markdown("<h1 style='text-align: center;'>📜 KSIĘGA RACHUNKOWA RANCZA</h1>", unsafe_allow_html=True)
@@ -152,13 +147,8 @@ if check_password():
 
     with tabs[0]:
         if not df_exp.empty:
-            fig = px.pie(df_exp, values='Kwota', names='Kategoria', hole=.4, template="plotly_white")
+            fig = px.pie(df_exp, values='Kwota', names='Kategoria', hole=.4)
             st.plotly_chart(fig, use_container_width=True)
-        if st.button("🏜️ ZAMKNIJ MIESIĄC", use_container_width=True):
-            ws_sav.update_acell('B2', str(balance))
-            ws_sav.update_acell('A2', str(sav_val + balance))
-            st.cache_data.clear()
-            st.balloons(); st.rerun()
 
     with tabs[1]:
         ci, ce = st.columns(2)
@@ -172,11 +162,10 @@ if check_password():
             with st.form("f_exp"):
                 ne, ke = st.text_input("Na co?"), st.number_input("Kwota")
                 ka = st.selectbox("Kategoria", ["Jedzenie", "Dom", "Transport", "Rozrywka", "Inne"])
-                if st.form_submit_button("ZAKSIĘGUJ WYDATEK"):
+                if st.form_submit_button("ZAKSIĘGUJ"):
                     client.open("Budzet_Data").worksheet("Wydatki").append_row([get_now(), ne, ke, ka, "Zmienny"])
                     st.cache_data.clear(); st.rerun()
         
-        st.markdown("### 🖋️ Historia i Usuwanie")
         df_exp["USUŃ"] = False
         e_exp = st.data_editor(df_exp, num_rows="dynamic", use_container_width=True)
         if st.button("Zapisz zmiany w historii"):
@@ -210,10 +199,17 @@ if check_password():
                 if st.form_submit_button("DODAJ RATĘ"):
                     client.open("Budzet_Data").worksheet("Raty").append_row([nr, kr, str(ds), str(de)])
                     st.cache_data.clear(); st.rerun()
+            
             df_rat["USUŃ"] = False
             e_rat = st.data_editor(df_rat, use_container_width=True, key="ed_rat")
             if st.button("Zatwierdź usuwanie rat"):
                 cl_r = e_rat[e_rat["USUŃ"] == False].drop(columns=["USUŃ"])
+                # KLUCZOWA POPRAWKA: Zamiana dat na tekst przed wysłaniem do Google
+                if not cl_r.empty:
+                    for col in ['Start', 'Koniec']:
+                        if col in cl_r.columns:
+                            cl_r[col] = cl_r[col].dt.strftime('%Y-%m-%d')
+                
                 ws_r = client.open("Budzet_Data").worksheet("Raty")
                 ws_r.clear(); ws_r.append_row(["Rata", "Kwota", "Start", "Koniec"])
                 if not cl_r.empty: ws_r.append_rows(cl_r.values.tolist())
@@ -256,7 +252,7 @@ if check_password():
             st.write("✅ Zadania")
             with st.form("f_tsk"):
                 tn, td = st.text_input("Zadanie"), st.date_input("Termin")
-                if st.form_submit_button("DODAJ"):
+                if st.form_submit_button("DODAJ ZADANIE"):
                     client.open("Budzet_Data").worksheet("Zadania").append_row([get_now(), tn, str(td), "Normalny"])
                     st.cache_data.clear(); st.rerun()
             df_tsk["USUŃ"] = False
