@@ -59,7 +59,7 @@ if check_password():
         data = {}
         for name in names:
             data[name] = pd.DataFrame(sh.worksheet(name).get_all_records())
-            time.sleep(0.4) # Bezpieczne opóźnienie dla API
+            time.sleep(0.4) 
         return data
 
     def get_now(): return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -76,11 +76,11 @@ if check_password():
     dni_m = calendar.monthrange(today.year, today.month)[1] - today.day + 1
     p800 = 1600 
 
-    # Filtry dla Dashboardu (widzimy tylko ten miesiąc)
+    # Filtry dla Dashboardu (tylko bieżący miesiąc)
     df_inc_m = df_inc[df_inc['Data i Godzina'].str.contains(current_month_str, na=False)].copy() if not df_inc.empty else df_inc
     df_exp_m = df_exp[df_exp['Data i Godzina'].str.contains(current_month_str, na=False)].copy() if not df_exp.empty else df_exp
 
-    # Raty
+    # Raty aktywne
     df_rat_active = pd.DataFrame()
     suma_rat = 0
     if not df_rat.empty:
@@ -95,7 +95,7 @@ if check_password():
     balance = inc_total - exp_total
     daily = balance / dni_m if dni_m > 0 else balance
 
-    # --- SIDEBAR (SEJF + ZAMKNIĘCIE) ---
+    # --- SIDEBAR (SEJF + MROŻENIE + ZAMKNIĘCIE) ---
     with st.sidebar:
         st.markdown("<h1 style='text-align:center;'>🤠 SEJF</h1>", unsafe_allow_html=True)
         client = get_client()
@@ -105,10 +105,27 @@ if check_password():
         st.metric("ZŁOTO W SEJFIE", f"{sav_val:,.2f} PLN")
         
         st.divider()
+        with st.expander("💰 ZARZĄDZAJ SKABCEM"):
+            amt_s = st.number_input("Ile dukatów?", min_value=0.0, step=10.0, key="amt_sidebar")
+            c_in, c_out = st.columns(2)
+            if c_in.button("WPŁAĆ"):
+                if amt_s > 0:
+                    ws_sav.update_acell('A2', str(sav_val + amt_s))
+                    sh.worksheet("Wydatki").append_row([get_now(), "ZAMROŻONE: Wpłata do Sejfu", amt_s, "Inne", "Oszczędności"])
+                    st.success(f"Zamrożono {amt_s} PLN!")
+                    st.cache_data.clear(); time.sleep(1); st.rerun()
+            if c_out.button("POBIERZ"):
+                if amt_s > 0:
+                    ws_sav.update_acell('A2', str(sav_val - amt_s))
+                    sh.worksheet("Przychody").append_row([get_now(), "Wypłata z Sejfu", amt_s])
+                    st.success(f"Pobrano {amt_s} PLN!")
+                    st.cache_data.clear(); time.sleep(1); st.rerun()
+
+        st.divider()
         if st.button("🏜️ ZAMKNIJ MIESIĄC"):
             new_sav = sav_val + balance
             ws_sav.update_acell('A2', str(new_sav))
-            st.success(f"Przelano {balance:.2f} PLN do sejfu!")
+            st.success(f"Przelano nadwyżkę {balance:.2f} PLN do sejfu!")
             st.cache_data.clear(); time.sleep(1); st.rerun()
 
     # --- DASHBOARD ---
@@ -139,16 +156,16 @@ if check_password():
     with tabs[0]:
         ci, ce = st.columns(2)
         with ci:
-            with st.form("f_inc"):
+            with st.form("f_inc", clear_on_submit=True):
                 st.subheader("➕ Przychód")
-                ni, ki = st.text_input("Skąd?"), st.number_input("Kwota", key="inkw")
+                ni, ki = st.text_input("Skąd?"), st.number_input("Kwota", key="f_inc_k")
                 if st.form_submit_button("DODAJ"):
                     sh.worksheet("Przychody").append_row([get_now(), ni, ki])
                     st.cache_data.clear(); st.rerun()
         with ce:
-            with st.form("f_exp"):
+            with st.form("f_exp", clear_on_submit=True):
                 st.subheader("➖ Wydatek")
-                ne, ke = st.text_input("Na co?"), st.number_input("Kwota", key="exkw")
+                ne, ke = st.text_input("Na co?"), st.number_input("Kwota", key="f_exp_k")
                 ka = st.selectbox("Kategoria", ["Jedzenie", "Dom", "Transport", "Rozrywka", "Inne"])
                 if st.form_submit_button("DODAJ"):
                     sh.worksheet("Wydatki").append_row([get_now(), ne, ke, ka, "Zmienny"])
@@ -156,7 +173,7 @@ if check_password():
         
         st.divider()
         df_exp["USUŃ"] = False
-        ed_e = st.data_editor(df_exp, num_rows="dynamic", use_container_width=True, key="ed_wpisy_main")
+        ed_e = st.data_editor(df_exp, num_rows="dynamic", use_container_width=True, key="ed_wpisy_v_final")
         if st.button("Zapisz zmiany w historii wpisów"):
             cl = ed_e[ed_e["USUŃ"] == False].drop(columns=["USUŃ"])
             ws = sh.worksheet("Wydatki")
@@ -169,12 +186,12 @@ if check_password():
         with cf:
             with st.form("f_fix"):
                 st.subheader("🏠 Stałe")
-                nf, kf = st.text_input("Opłata"), st.number_input("Kwota", key="fixkw")
+                nf, kf = st.text_input("Opłata"), st.number_input("Kwota", key="f_fix_k")
                 if st.form_submit_button("DODAJ"):
                     sh.worksheet("Koszty_Stale").append_row([get_now(), nf, kf])
                     st.cache_data.clear(); st.rerun()
             df_fix["USUŃ"] = False
-            ed_f = st.data_editor(df_fix, use_container_width=True, key="ed_stale_tab")
+            ed_f = st.data_editor(df_fix, use_container_width=True, key="ed_stale_v_final")
             if st.button("Zapisz zmiany w Stałych"):
                 cl_f = ed_f[ed_f["USUŃ"] == False].drop(columns=["USUŃ"])
                 ws_f = sh.worksheet("Koszty_Stale")
@@ -184,13 +201,13 @@ if check_password():
         with cr:
             with st.form("f_rat"):
                 st.subheader("🗓️ Raty")
-                nr, kr = st.text_input("Rata"), st.number_input("Kwota", key="ratkw")
+                nr, kr = st.text_input("Rata"), st.number_input("Kwota", key="f_rat_k")
                 ds, de = st.date_input("Start"), st.date_input("Koniec")
                 if st.form_submit_button("DODAJ"):
                     sh.worksheet("Raty").append_row([nr, kr, str(ds), str(de)])
                     st.cache_data.clear(); st.rerun()
             df_rat["USUŃ"] = False
-            ed_r = st.data_editor(df_rat, use_container_width=True, key="ed_raty_tab")
+            ed_r = st.data_editor(df_rat, use_container_width=True, key="ed_raty_v_final")
             if st.button("Zapisz zmiany w Ratach"):
                 cl_r = ed_r[ed_r["USUŃ"] == False].drop(columns=["USUŃ"])
                 if not cl_r.empty:
@@ -203,13 +220,13 @@ if check_password():
     with tabs[2]:
         with st.form("f_pla"):
             st.subheader("📅 Plany")
-            pn, pk = st.text_input("Cel"), st.number_input("Kwota", key="plkw")
+            pn, pk = st.text_input("Cel"), st.number_input("Kwota", key="f_pla_k")
             pm = st.selectbox("Miesiąc", ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"])
             if st.form_submit_button("ZAPLANUJ"):
                 sh.worksheet("Planowanie").append_row([get_now(), pn, pk, pm])
                 st.cache_data.clear(); st.rerun()
         df_pla["USUŃ"] = False
-        ed_p = st.data_editor(df_pla, use_container_width=True, key="ed_plany_tab")
+        ed_p = st.data_editor(df_pla, use_container_width=True, key="ed_plany_v_final")
         if st.button("Zaktualizuj Plany"):
             cl_p = ed_p[ed_p["USUŃ"] == False].drop(columns=["USUŃ"])
             ws_p = sh.worksheet("Planowanie")
@@ -227,7 +244,7 @@ if check_password():
                     sh.worksheet("Zakupy").append_row([get_now(), it])
                     st.cache_data.clear(); st.rerun()
             df_shp["USUŃ"] = False
-            ed_s = st.data_editor(df_shp, use_container_width=True, key="ed_zakupy_tab")
+            ed_s = st.data_editor(df_shp, use_container_width=True, key="ed_zakupy_v_final")
             if st.button("Usuń wybrane zakupy"):
                 cl_s = ed_s[ed_s["USUŃ"] == False].drop(columns=["USUŃ"])
                 ws_s = sh.worksheet("Zakupy")
@@ -242,7 +259,7 @@ if check_password():
                     sh.worksheet("Zadania").append_row([get_now(), tn, str(td), "Normalny"])
                     st.cache_data.clear(); st.rerun()
             df_tsk["USUŃ"] = False
-            ed_t = st.data_editor(df_tsk, use_container_width=True, key="ed_zadania_tab")
+            ed_t = st.data_editor(df_tsk, use_container_width=True, key="ed_zadania_v_final")
             if st.button("Usuń wybrane zadania"):
                 cl_t = ed_t[ed_t["USUŃ"] == False].drop(columns=["USUŃ"])
                 ws_t = sh.worksheet("Zadania")
