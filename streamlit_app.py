@@ -8,7 +8,7 @@ import calendar
 import time
 
 # --- KONFIGURACJA STRONY ---
-st.set_page_config(page_title="Ranczo Finansowe 2026", layout="wide", page_icon="❤️")
+st.set_page_config(page_title="Ranczo Finansowe 2026", layout="wide", page_icon="💖")
 
 # --- FUNKCJA LOGOWANIA ---
 def check_password():
@@ -20,95 +20,95 @@ def check_password():
             st.session_state["password_correct"] = False
 
     if "password_correct" not in st.session_state:
-        st.markdown("<h2 style='text-align: center; color: #ad1457;'>💖 Zatrzymaj się, kowboju! Podaj hasło do serca:</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #ff4081;'>🌹 Witaj w Miłosnym Sejfie. Podaj hasło:</h2>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            st.text_input("Klucz do sejfu", type="password", on_change=password_entered, key="password")
+            st.text_input("Klucz do serca", type="password", on_change=password_entered, key="password")
             if "password_correct" in st.session_state and not st.session_state["password_correct"]:
-                st.error("❌ Zły klucz do serca!")
+                st.error("❌ Zły klucz! Serce pozostaje zamknięte.")
         return False
     return True
 
 if check_password():
-    # --- STYLIZACJA WALENTYNKOWA ---
+    # --- ULTRA WALENTYNKOWA STYLIZACJA CSS ---
     st.markdown("""
         <style>
-        /* Tło i główne kontenery */
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
         .main { 
-            background-color: #fce4ec; 
-            background-image: radial-gradient(#f8bbd0 1px, transparent 1px);
-            background-size: 20px 20px;
+            background: linear-gradient(135deg, #fff5f8 0%, #fce4ec 100%);
         }
         
-        /* Styl metryk (Karty) */
+        /* Animowane serca w tle (uproszczone) */
+        .main::before {
+            content: "❤️";
+            position: fixed;
+            top: 10%; left: 5%;
+            font-size: 24px;
+            opacity: 0.2;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Karty metryk */
         [data-testid="stMetric"] { 
-            background-color: #ffffff !important; 
-            border: 2px solid #f06292 !important; 
-            padding: 20px !important; 
-            border-radius: 20px !important;
-            box-shadow: 5px 5px 15px rgba(240, 98, 146, 0.2) !important;
+            background: white !important; 
+            border: 3px solid #ff80ab !important; 
+            border-radius: 25px !important;
+            box-shadow: 0 10px 20px rgba(255, 128, 171, 0.2) !important;
+            text-align: center !important;
         }
         [data-testid="stMetricLabel"] p { 
-            color: #880e4f !important; 
-            font-size: 16px !important; 
-            font-weight: bold !important; 
+            color: #c2185b !important; 
+            font-family: 'Dancing Script', cursive !important;
+            font-size: 24px !important;
         }
         [data-testid="stMetricValue"] div { 
-            color: #d81b60 !important; 
-            font-size: 36px !important; 
-            font-family: 'Georgia', serif; 
+            color: #e91e63 !important; 
+            font-weight: bold !important;
         }
 
         /* Nagłówki */
         h1, h2, h3 { 
             color: #ad1457 !important; 
-            font-family: 'Comic Sans MS', cursive, sans-serif; 
-            text-shadow: 1px 1px 2px #f8bbd0;
+            font-family: 'Dancing Script', cursive !important;
+            text-align: center;
         }
 
         /* Przyciski */
         .stButton>button { 
-            background-color: #ec407a !important; 
+            background: linear-gradient(to right, #ff4081, #ec407a) !important;
             color: white !important; 
-            border: none !important; 
-            border-radius: 50px !important;
-            font-weight: bold !important; 
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .stButton>button:hover {
-            background-color: #d81b60 !important;
-            transform: scale(1.02);
-            box-shadow: 0 6px 12px rgba(236, 64, 122, 0.3);
-        }
-
-        /* Expander i Formularze */
-        [data-testid="stExpander"] { 
-            background-color: #fff5f8 !important; 
-            border: 1px solid #f48fb1 !important; 
-            border-radius: 15px !important; 
+            border-radius: 30px !important;
+            border: none !important;
+            font-size: 18px !important;
+            height: 3em !important;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3) !important;
         }
         
         /* Sidebar */
         [data-testid="stSidebar"] {
-            background-color: #f8bbd0 !important;
-        }
-        
-        /* Tabela i Edytor */
-        .stDataFrame, [data-testid="stTable"] {
-            background-color: white !important;
-            border-radius: 10px;
+            background-color: #fce4ec !important;
+            border-right: 2px solid #f8bbd0;
         }
 
-        /* Dekoracyjne serca (opcjonalne animacje CSS) */
-        @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 10px;
         }
-        .valentines-icon {
-            display: inline-block;
-            animation: floating 3s ease-in-out infinite;
+        .stTabs [data-baseweb="tab"] {
+            background-color: #f8bbd0 !important;
+            border-radius: 15px 15px 0 0 !important;
+            color: #880e4f !important;
+            padding: 10px 20px !important;
+        }
+        .stTabs [aria-selected="true"] {
+            background-color: #e91e63 !important;
+            color: white !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -128,8 +128,7 @@ if check_password():
         names = ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]
         data = {}
         for name in names:
-            rows = sh.worksheet(name).get_all_records()
-            data[name] = pd.DataFrame(rows)
+            data[name] = pd.DataFrame(sh.worksheet(name).get_all_records())
             time.sleep(0.5)
         return data
 
@@ -139,17 +138,19 @@ if check_password():
         all_d = load_all_data()
         df_inc, df_exp, df_fix, df_rat, df_sav, df_shp, df_tsk, df_pla = [all_d[n] for n in ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]]
     except:
-        st.error("💌 Serwer amora odpoczywa. Odśwież za chwilę."); st.stop()
+        st.error("🏹 Amor zgubił strzałę (Błąd połączenia). Odśwież stronę."); st.stop()
 
-    # --- FILTROWANIE CZASU ---
+    # --- LOGIKA FILTROWANIA (CZYSTA KARTA) ---
     today = date.today()
     current_month_str = today.strftime("%Y-%m")
     dni_m = calendar.monthrange(today.year, today.month)[1] - today.day + 1
     p800 = 1600 
 
+    # Filtrujemy dane tak, aby widzieć tylko bieżący miesiąc (Historyczne zostają w Sheets, ale znikają z aplikacji)
     df_inc_m = df_inc[df_inc['Data i Godzina'].astype(str).str.contains(current_month_str, na=False)].copy() if not df_inc.empty else pd.DataFrame()
     df_exp_m = df_exp[df_exp['Data i Godzina'].astype(str).str.contains(current_month_str, na=False)].copy() if not df_exp.empty else pd.DataFrame()
 
+    # Raty aktywne
     df_rat_active = pd.DataFrame()
     suma_rat = 0
     if not df_rat.empty:
@@ -164,57 +165,57 @@ if check_password():
     balance = inc_total - exp_total
     daily = balance / dni_m if dni_m > 0 else balance
 
-    # --- SIDEBAR ---
+    # --- SIDEBAR (SEJF) ---
     with st.sidebar:
-        st.markdown("<h1 style='text-align:center;'>💖 SEJF</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 40px;'>💖 SEJF</h1>", unsafe_allow_html=True)
         client = get_client()
         sh = client.open("Budzet_Data")
         ws_sav = sh.worksheet("Oszczednosci")
         sav_val = float(str(ws_sav.acell('A2').value).replace(',', '.'))
-        st.metric("ZŁOTO W SEJFIE", f"{sav_val:,.2f} PLN")
+        st.metric("ZŁOTO W SERCU", f"{sav_val:,.2f} PLN")
         
         st.divider()
-        with st.expander("❤️ ZARZĄDZAJ SKABCEM"):
+        with st.expander("🎁 ZARZĄDZAJ SKABCEM"):
             amt_s = st.number_input("Ile dukatów?", min_value=0.0, step=10.0, key="amt_sidebar")
             c_in, c_out = st.columns(2)
             if c_in.button("WPŁAĆ"):
                 if amt_s > 0:
                     ws_sav.update_acell('A2', str(sav_val + amt_s))
                     sh.worksheet("Wydatki").append_row([get_now(), "ZAMROŻONE: Wpłata do Sejfu", amt_s, "Inne", "Oszczędności"])
-                    st.success(f"Ukochanie zamrożono {amt_s} PLN!")
+                    st.success(f"Dodano {amt_s} PLN do miłości!")
                     st.cache_data.clear(); time.sleep(1); st.rerun()
             if c_out.button("POBIERZ"):
                 if amt_s > 0:
                     ws_sav.update_acell('A2', str(sav_val - amt_s))
                     sh.worksheet("Przychody").append_row([get_now(), "Wypłata z Sejfu", amt_s])
-                    st.success(f"Pobrano z serca {amt_s} PLN!")
+                    st.success(f"Pobrano {amt_s} PLN z zapasów!")
                     st.cache_data.clear(); time.sleep(1); st.rerun()
 
         st.divider()
-        if st.button("🌹 ZAMKNIJ MIESIĄC"):
+        if st.button("🏹 ZAMKNIJ MIESIĄC"):
             new_sav = sav_val + balance
             ws_sav.update_acell('A2', str(new_sav))
             st.balloons()
-            st.success(f"Przelano nadwyżkę miłości {balance:.2f} PLN do sejfu!")
+            st.success(f"Nadwyżka {balance:.2f} PLN zabezpieczona w Sejfu!")
             st.cache_data.clear(); time.sleep(1); st.rerun()
 
     # --- DASHBOARD ---
-    st.markdown("<h1 style='text-align: center;'>💌 KSIĘGA RACHUNKOWA</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>📜 MIŁOSNA KSIĘGA RACHUNKOWA</h1>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
-    c1.metric("💰 PORTFEL (MIESIĄC)", f"{balance:,.2f} PLN")
-    c2.metric("☀️ NA DZIEŃ", f"{daily:,.2f} PLN")
+    c1.metric("💰 PORTFEL (BIEŻĄCY)", f"{balance:,.2f} PLN")
+    c2.metric("🌹 NA DZIEŃ", f"{daily:,.2f} PLN")
 
     h_inc, h_exp = st.columns(2)
     with h_inc:
-        st.metric("❤️ DOCHODY", f"{inc_total:,.2f} PLN")
-        with st.expander("🔍 Szczegóły wpływów"):
+        st.metric("📈 DOCHODY", f"{inc_total:,.2f} PLN")
+        with st.expander("🔍 Szczegóły Twoich wpływów"):
             if not df_inc_m.empty:
                 st.table(df_inc_m[["Nazwa", "Kwota"]])
             else:
-                st.write("Czekamy na pierwsze strzały amora (wpływy).")
+                st.info("Brak nowych wpływów w tym miesiącu.")
 
     with h_exp:
-        st.metric("💔 WYDATKI", f"{exp_total:,.2f} PLN")
+        st.metric("📉 WYDATKI", f"{exp_total:,.2f} PLN")
         with st.expander("🔍 Pełna lista kosztów"):
             e_all = pd.concat([
                 df_exp_m[["Nazwa", "Kwota"]] if not df_exp_m.empty else pd.DataFrame(),
@@ -224,10 +225,10 @@ if check_password():
             if not e_all.empty:
                 st.table(e_all)
             else:
-                st.write("Brak wydatków – serce pełne, portfel też!")
+                st.info("Czysta karta! Brak wydatków.")
 
     # --- ZAKŁADKI OPERACYJNE ---
-    tabs = st.tabs(["🎁 Wpisy", "🏠 Stałe & Raty", "📅 Plany", "🛒 Listy"])
+    tabs = st.tabs(["🎀 Wpisy", "🏠 Stałe & Raty", "📅 Plany", "🛒 Listy"])
 
     with tabs[0]:
         ci, ce = st.columns(2)
@@ -248,20 +249,28 @@ if check_password():
                     st.cache_data.clear(); st.rerun()
         
         st.divider()
-        df_exp["USUŃ"] = False
-        ed_e = st.data_editor(df_exp, num_rows="dynamic", use_container_width=True, key="ed_wpisy_v_final")
-        if st.button("Zapisz zmiany w historii"):
-            cl = ed_e[ed_e["USUŃ"] == False].drop(columns=["USUŃ"])
+        st.subheader("📝 Edycja bieżącego miesiąca")
+        # Wyświetlamy tylko bieżący miesiąc w edytorze - to jest "Czysta Karta"
+        df_exp_m["USUŃ"] = False
+        ed_e = st.data_editor(df_exp_m, num_rows="dynamic", use_container_width=True, key="ed_wpisy_v_final")
+        
+        if st.button("Zapisz zmiany w wydatkach"):
+            # Pobieramy wydatki z INNYCH miesięcy (których nie edytujemy)
+            df_hist = df_exp[~df_exp['Data i Godzina'].astype(str).str.contains(current_month_str, na=False)]
+            # Łączymy je z tym, co zostało w edytorze (bieżący miesiąc)
+            cl_current = ed_e[ed_e["USUŃ"] == False].drop(columns=["USUŃ"])
+            final_df = pd.concat([df_hist, cl_current], ignore_index=True)
+            
             ws = sh.worksheet("Wydatki")
             ws.clear(); ws.append_row(["Data i Godzina", "Nazwa", "Kwota", "Kategoria", "Typ"])
-            if not cl.empty: ws.append_rows(cl.values.tolist())
+            if not final_df.empty: ws.append_rows(final_df.values.tolist())
             st.cache_data.clear(); st.rerun()
 
     with tabs[1]:
         cf, cr = st.columns(2)
         with cf:
             with st.form("f_fix"):
-                st.subheader("🏠 Stałe")
+                st.subheader("🏠 Koszty Stałe")
                 nf, kf = st.text_input("Opłata"), st.number_input("Kwota", key="f_fix_k")
                 if st.form_submit_button("DODAJ"):
                     sh.worksheet("Koszty_Stale").append_row([get_now(), nf, kf])
@@ -276,7 +285,7 @@ if check_password():
                 st.cache_data.clear(); st.rerun()
         with cr:
             with st.form("f_rat"):
-                st.subheader("🗓️ Raty")
+                st.subheader("🗓️ Aktywne Raty")
                 nr, kr = st.text_input("Rata"), st.number_input("Kwota", key="f_rat_k")
                 ds, de = st.date_input("Start"), st.date_input("Koniec")
                 if st.form_submit_button("DODAJ"):
@@ -295,7 +304,7 @@ if check_password():
 
     with tabs[2]:
         with st.form("f_pla"):
-            st.subheader("📅 Plany")
+            st.subheader("📅 Plany Marzeń")
             pn, pk = st.text_input("Cel"), st.number_input("Kwota", key="f_pla_k")
             pm = st.selectbox("Miesiąc", ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"])
             if st.form_submit_button("ZAPLANUJ"):
@@ -313,7 +322,7 @@ if check_password():
     with tabs[3]:
         cs, ct = st.columns(2)
         with cs:
-            st.subheader("🛒 Zakupy")
+            st.subheader("🛒 Lista Zakupów")
             with st.form("f_sho"):
                 it = st.text_input("Produkt")
                 if st.form_submit_button("DODAJ DO LISTY"):
@@ -321,14 +330,14 @@ if check_password():
                     st.cache_data.clear(); st.rerun()
             df_shp["USUŃ"] = False
             ed_s = st.data_editor(df_shp, use_container_width=True, key="ed_zakupy_v_final")
-            if st.button("Usuń wybrane zakupy"):
+            if st.button("Usuń z listy"):
                 cl_s = ed_s[ed_s["USUŃ"] == False].drop(columns=["USUŃ"])
                 ws_s = sh.worksheet("Zakupy")
                 ws_s.clear(); ws_s.append_row(["Data i Godzina", "Produkt"])
                 if not cl_s.empty: ws_s.append_rows(cl_s.values.tolist())
                 st.cache_data.clear(); st.rerun()
         with ct:
-            st.subheader("✅ Zadania")
+            st.subheader("✅ Miłosne Zadania")
             with st.form("f_tsk"):
                 tn, td = st.text_input("Zadanie"), st.date_input("Termin")
                 if st.form_submit_button("DODAJ ZADANIE"):
@@ -336,7 +345,7 @@ if check_password():
                     st.cache_data.clear(); st.rerun()
             df_tsk["USUŃ"] = False
             ed_t = st.data_editor(df_tsk, use_container_width=True, key="ed_zadania_v_final")
-            if st.button("Usuń wybrane zadania"):
+            if st.button("Ukończ zadania"):
                 cl_t = ed_t[ed_t["USUŃ"] == False].drop(columns=["USUŃ"])
                 ws_t = sh.worksheet("Zadania")
                 ws_t.clear(); ws_t.append_row(["Data i Godzina", "Zadanie", "Termin", "Priorytet"])
