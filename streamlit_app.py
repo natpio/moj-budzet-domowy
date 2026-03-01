@@ -61,23 +61,20 @@ if check_password():
     except Exception as e:
         st.error(f"🚜 Błąd bazy danych: {e}"); st.stop()
 
-    # --- NAPRAWA BŁĘDU DATY (errors='coerce') ---
+    # Czyszczenie danych (odporność na błędy)
     for df in [df_inc, df_exp, df_fix, df_rat]:
         df['Kwota'] = pd.to_numeric(df['Kwota'], errors='coerce').fillna(0)
     
-    # Tu była przyczyna błędu - naprawiamy to:
     df_inc['Data i Godzina'] = pd.to_datetime(df_inc['Data i Godzina'], errors='coerce')
     df_exp['Data i Godzina'] = pd.to_datetime(df_exp['Data i Godzina'], errors='coerce')
     df_rat['Start'] = pd.to_datetime(df_rat['Start'], errors='coerce')
     df_rat['Koniec'] = pd.to_datetime(df_rat['Koniec'], errors='coerce')
     
-    # Usuwamy puste wiersze, które mogły powstać przez błędy w Excelu
     df_inc = df_inc.dropna(subset=['Data i Godzina'])
     df_exp = df_exp.dropna(subset=['Data i Godzina'])
-
     s_sav = float(str(df_sav.iloc[0,0]).replace(',', '.')) if not df_sav.empty else 0.0
 
-    # --- 5. FUNKCJA GENEROWANIA KSIĘGI ---
+    # --- 5. LOGIKA KSIĘGI ---
     def generate_ledger(sel_year, sel_month):
         target_date = pd.Timestamp(year=sel_year, month=sel_month, day=1)
         inc_before = df_inc[df_inc['Data i Godzina'] < target_date]['Kwota'].sum()
@@ -97,7 +94,6 @@ if check_password():
         ledger_data = []
         curr_val = op_bal
         ledger_data.append({"Data": target_date.strftime("%Y-%m-%d"), "Opis": "BILANS OTWARCIA", "Zmiana": 0.0, "Saldo": curr_val})
-        
         curr_val += 1600
         ledger_data.append({"Data": target_date.strftime("%Y-%m-%d"), "Opis": "ZASILENIE: 800+", "Zmiana": 1600.0, "Saldo": curr_val})
         
@@ -112,7 +108,6 @@ if check_password():
 
         mask_inc = (df_inc['Data i Godzina'].dt.month == sel_month) & (df_inc['Data i Godzina'].dt.year == sel_year)
         mask_exp = (df_exp['Data i Godzina'].dt.month == sel_month) & (df_exp['Data i Godzina'].dt.year == sel_year)
-        
         ops = pd.concat([df_inc[mask_inc].assign(T="P"), df_exp[mask_exp].assign(T="W")]).sort_values('Data i Godzina')
         
         for _, row in ops.iterrows():
@@ -122,7 +117,7 @@ if check_password():
             
         return pd.DataFrame(ledger_data), curr_val
 
-    # --- 6. DASHBOARD ---
+    # --- 6. GŁÓWNE METRYKI ---
     today_y, today_m = date.today().year, date.today().month
     _, current_total_balance = generate_ledger(today_y, today_m)
     
@@ -157,38 +152,54 @@ if check_password():
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             with st.form("new_fix"):
-                n, k = st.text_input("Nazwa (np. Czynsz)"), st.number_input("Kwota mies.", step=10.0)
-                if st.form_submit_button("DODAJ KOSZT"):
-                    sh.worksheet("Koszty_Stale").append_row([n, k])
+                st.write("**Nowy Stały Koszt**")
+                n_fix, k_fix = st.text_input("Nazwa (np. Prąd)"), st.number_input("Kwota mies.", step=10.0)
+                if st.form_submit_button("DODAJ KOSZT STAŁY"):
+                    sh.worksheet("Koszty_Stale").append_row([n_fix, k_fix])
                     st.cache_data.clear(); st.rerun()
         with c_f2:
             with st.form("new_rat"):
-                n, k = st.text_input("Nazwa raty"), st.number_input("Kwota raty", step=10.0)
-                s, e = st.date_input("Start"), st.date_input("Koniec")
-                if st.form_submit_button("DODAJ RATĘ"):
-                    sh.worksheet("Raty").append_row([n, k, s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")])
+                st.write("**Nowa Rata**")
+                n_rat, k_rat = st.text_input("Nazwa kredytu/raty"), st.number_input("Kwota raty", step=10.0)
+                d_s, d_e = st.date_input("Od kiedy"), st.date_input("Do kiedy")
+                if st.form_submit_button("ZAPISZ RATĘ"):
+                    # Tu poprawka: upewniamy się, że kolumny to Rata, Kwota, Start, Koniec
+                    sh.worksheet("Raty").append_row([n_rat, k_rat, d_s.strftime("%Y-%m-%d"), d_e.strftime("%Y-%m-%d")])
                     st.cache_data.clear(); st.rerun()
-        st.table(df_fix[["Nazwa", "Kwota"]])
+        
+        st.divider()
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            st.write("**🏠 Twoje Stałe Opłaty:**")
+            st.dataframe(df_fix, use_container_width=True, hide_index=True)
+        with col_t2:
+            st.write("**📜 Twoje Harmonogramy Rat:**")
+            # Pokazujemy raty, które jeszcze trwają
+            df_active = df_rat[df_rat['Koniec'] >= pd.Timestamp(date.today())].copy()
+            if not df_active.empty:
+                df_active['Start'] = df_active['Start'].dt.strftime('%Y-%m-%d')
+                df_active['Koniec'] = df_active['Koniec'].dt.strftime('%Y-%m-%d')
+            st.dataframe(df_active, use_container_width=True, hide_index=True)
 
     with t3:
-        st.subheader("📜 HISTORIA OPERACJI")
+        st.subheader("📜 KSIĘGA GŁÓWNA")
         months_list = {1: "Styczeń", 2: "Luty", 3: "Marzec", 4: "Kwiecień", 5: "Maj", 6: "Czerwiec", 7: "Lipiec", 8: "Sierpień", 9: "Wrzesień", 10: "Październik", 11: "Listopad", 12: "Grudzień"}
         col_s1, col_s2 = st.columns(2)
         s_year = col_s1.selectbox("Rok", [2026, 2025])
-        s_month = col_sel = col_s2.selectbox("Miesiąc", range(1, 13), format_func=lambda x: months_list[x], index=date.today().month-1)
+        s_month = col_s2.selectbox("Miesiąc", range(1, 13), format_func=lambda x: months_list[x], index=date.today().month-1)
         
         df_ledger, _ = generate_ledger(s_year, s_month)
         st.dataframe(df_ledger.style.format({"Zmiana": "{:,.2f} PLN", "Saldo": "{:,.2f} PLN"}), use_container_width=True, hide_index=True)
 
     with t4:
         st.subheader("🛒 Listy")
-        st.write(df_shp["Produkt"].tolist() if not df_shp.empty else "Pusto")
-        if st.button("Wyczyść listy"):
+        st.write(df_shp["Produkt"].tolist() if not df_shp.empty else "Brak zakupów")
+        if st.button("Wyczyść listę"):
             sh.worksheet("Zakupy").clear(); sh.worksheet("Zakupy").append_row(["Data", "Produkt"])
             st.cache_data.clear(); st.rerun()
 
     with st.sidebar:
-        st.metric("SEJF", f"{s_sav:,.2f} PLN")
+        st.metric("SKRZYNIA (SEJF)", f"{s_sav:,.2f} PLN")
         if st.button("🚜 ŻNIWA"):
             if current_total_balance > 0:
                 sh.worksheet("Oszczednosci").update_acell('A2', str(s_sav + current_total_balance))
