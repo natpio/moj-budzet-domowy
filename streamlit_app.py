@@ -27,7 +27,7 @@ def check_password():
     return True
 
 if check_password():
-    # --- 3. MAKSYMALNY STYL RETRO PIN-UP / DINER (CSS) ---
+    # --- 3. MAKSYMALNY STYL RETRO PIN-UP / DINER (CSS) - POPRAWIONA CZYTELNOŚĆ ---
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Bungee+Inline&family=Montserrat:wght@400;700&display=swap');
@@ -40,38 +40,38 @@ if check_password():
             background-position: 0 0, 30px 30px;
             font-family: 'Montserrat', sans-serif;
         }
+
+        /* POPRAWA CZYTELNOŚCI FORMULARZY */
+        div[data-testid="stForm"] {
+            background-color: #fefae0 !important; /* Kremowe tło blokujące kropki */
+            border: 5px solid #003049 !important;
+            border-radius: 15px !important;
+            padding: 25px !important;
+            box-shadow: 10px 10px 0px #d62828 !important;
+        }
         
-        /* Karty metryk - styl Winyl / Retro Fridge */
+        /* Czytelniejsze pola tekstowe i napisy */
+        label p, .stMarkdown p {
+            color: #003049 !important;
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+        }
+        
+        input {
+            background-color: white !important;
+            color: black !important;
+            border: 2px solid #d62828 !important;
+        }
+
+        /* Karty metryk - styl Winyl */
         [data-testid="stMetric"] { 
             background: #fefae0 !important; 
             border: 8px solid #ffafcc !important; 
-            border-radius: 50% 10px 50% 10px !important; /* Kształt winylu */
+            border-radius: 50% 10px 50% 10px !important; 
             box-shadow: 12px 12px 0px 0px #d62828 !important; 
             padding: 30px !important; 
             overflow: hidden;
             position: relative;
-        }
-        [data-testid="stMetric"]::before { /* Motyw płyty winylowej */
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 150px; height: 150px;
-            background: #000000;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.1;
-            z-index: 0;
-        }
-        [data-testid="stMetric"]::after { /* Czerwona etykieta */
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 60px; height: 60px;
-            background: #d62828;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.1;
-            z-index: 0;
         }
         [data-testid="stMetricLabel"] p { 
             color: #003049 !important; 
@@ -104,7 +104,7 @@ if check_password():
             text-transform: uppercase;
         }
         
-        /* Przyciski - styl starego neonu / winylu */
+        /* Przyciski */
         .stButton>button { 
             background: #d62828 !important; 
             color: white !important; 
@@ -116,33 +116,17 @@ if check_password():
             box-shadow: 6px 6px 0px #003049;
             transition: 0.3s;
         }
-        .stButton>button:hover { 
-            transform: scale(1.08) rotate(-3deg);
-            background: #003049 !important;
+        
+        /* Poprawa widoczności tabeli danych */
+        .stDataFrame {
+            background-color: white !important;
+            border-radius: 10px !important;
+            padding: 5px !important;
         }
         
-        /* Sidebar - miętowo-wiśniowy */
         [data-testid="stSidebar"] { 
             background: #ffafcc !important; 
             border-right: 8px solid #d62828 !important; 
-        }
-        [data-testid="stSidebar"] h2 { color: white !important; border: none !important; }
-        
-        /* Zakładki (Tabs) - Neon style */
-        .stTabs [data-baseweb="tab-list"] { gap: 15px; }
-        .stTabs [data-baseweb="tab"] {
-            background-color: #fefae0;
-            border-radius: 20px 20px 0px 0px;
-            padding: 15px 30px;
-            font-family: 'Bungee Inline', cursive;
-            color: #003049;
-            border-bottom: 5px solid #003049;
-        }
-        .stTabs [aria-selected="true"] {
-            background-color: #d62828 !important;
-            color: white !important;
-            border-bottom: 5px solid white;
-            box-shadow: 0 0 15px #d62828;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -221,11 +205,11 @@ if check_password():
     days_left = calendar.monthrange(today_y, today_m)[1] - date.today().day + 1
     col_met2.metric("DAILY MILKSHAKE", f"{current_total_balance/days_left:,.2f} $" if days_left > 0 else "---")
 
-    # --- 7. TABS (ZIKONIZOWANE) ---
+    # --- 7. TABS ---
     t1, t2, t3, t4 = st.tabs(["🎵 RECORDS", "🏠 DINER SETUP", "📊 JUKEBOX HIT LIST", "🍔 SODA FOUNTAIN LIST"])
 
     with t1:
-        st.subheader("📻 Rock'n'Roll Records - Sweet Income & Fancy Expense")
+        st.subheader("📻 Rock'n'Roll Records")
         c1, c2 = st.columns(2)
         with c1:
             with st.form("f_i", clear_on_submit=True):
@@ -241,7 +225,7 @@ if check_password():
                     sh.worksheet("Wydatki").append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), t, k, "Retro", "Variable"]); st.cache_data.clear(); st.rerun()
 
     with t2:
-        st.subheader("🏠 Diner Setup - Monthly Bills & Loan Installments")
+        st.subheader("🏠 Diner Setup")
         cf1, cf2 = st.columns(2)
         with cf1:
             with st.form("nf"):
@@ -257,42 +241,33 @@ if check_password():
                 if st.form_submit_button("ZAPISZ HARMONOGRAM"):
                     sh.worksheet("Raty").append_row([n, k, s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")]); st.cache_data.clear(); st.rerun()
         st.divider()
-        st.write("**Twoje aktywne obciążenia:**")
         st.dataframe(df_fix, use_container_width=True)
 
     with t3:
-        st.subheader("📊 Jukebox Analysis - Your Cashflow Hit List")
+        st.subheader("📊 Jukebox Analysis")
         months = {1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN", 7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"}
         c_s1, c_s2 = st.columns(2)
         s_y = c_s1.selectbox("Wybierz rok", [2026, 2025])
         s_m = c_s2.selectbox("Miesiąc", range(1, 13), format_func=lambda x: months[x], index=date.today().month-1)
         df_l, _ = generate_ledger(s_y, s_m)
-        
-        # Wygląd wyciągu bankowego z tamtych lat
-        st.write("**Twój historyczny ślad finansowy:**")
         st.dataframe(df_l.style.format({"Zmiana": "{:,.2f} $", "Saldo": "{:,.2f} $"}), use_container_width=True, hide_index=True)
         
-        # Wykres salda - Retro color
-        fig = px.area(df_l, x=df_l.index, y="Saldo", title=f"Wędrówka Twojego Bogactwa ({months[s_m]})", 
-                       labels={"Saldo": "Stan Sejfu ($)"})
-        fig.update_traces(line_color='#d62828', fillcolor='rgba(214, 40, 40, 0.1)')
+        fig = px.area(df_l, x=df_l.index, y="Saldo", title=f"Wędrówka Twojego Bogactwa ({months[s_m]})")
+        fig.update_traces(line_color='#d62828', fillcolor='rgba(214, 40, 40, 0.2)')
         st.plotly_chart(fig, use_container_width=True)
 
     with t4:
-        st.subheader("🛒 GROCERY SHOPPING LIST - Diner Supplies")
+        st.subheader("🛒 GROCERY SHOPPING LIST")
         if not df_shp.empty:
             st.write("**Lista Zakupów:**", df_shp["Produkt"].tolist())
-        else:
-            st.write("**Karta zakupów pusta.**")
-            
-        if st.button("WYCZYŚĆ KARTĘ I ZAMKNIJ DINER"):
+        if st.button("WYCZYŚĆ KARTĘ"):
             sh.worksheet("Zakupy").clear(); sh.worksheet("Zakupy").append_row(["Data", "Produkt"]); st.cache_data.clear(); st.rerun()
 
     with st.sidebar:
-        st.markdown("<h2 style='color: white !important;'>💎 THE VAULT (SEJF)</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: white !important;'>💎 THE VAULT</h2>", unsafe_allow_html=True)
         st.metric("SAVINGS", f"{s_sav:,.2f} $")
         st.divider()
-        if st.button("🚜 HARVEST SURPLUS (ŻNIWA)"):
+        if st.button("🚜 HARVEST SURPLUS"):
             if current_total_balance > 0:
                 sh.worksheet("Oszczednosci").update_acell('A2', str(s_sav + current_total_balance))
                 st.balloons(); st.cache_data.clear(); time.sleep(1); st.rerun()
