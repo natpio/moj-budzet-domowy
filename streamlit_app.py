@@ -8,16 +8,16 @@ import calendar
 import time
 
 # --- 1. KONFIGURACJA STRONY ---
-st.set_page_config(page_title="Retro Pin-Up Budget 1960", layout="wide", page_icon="💄")
+st.set_page_config(page_title="Rock'n'Roll Diner Budget 1960", layout="wide", page_icon="🍒")
 
 # --- 2. LOGOWANIE ---
 def check_password():
     if "password_correct" not in st.session_state:
-        st.markdown("<h2 style='text-align: center; color: #d62828; font-family: \"Pacifico\", cursive;'>🍒 Witaj w Dinerze. Podaj hasło:</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #d62828; font-family: \"Pacifico\", cursive;'>🎵 Witaj w Dinerze. Włącz Jukebox (Hasło):</h2>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
             pwd = st.text_input("Klucz do szafy grającej", type="password")
-            if st.button("START THE JUKEBOX"):
+            if st.button("PUNKT DLA CIEBIE! START!"):
                 if pwd == st.secrets["credentials"]["password"]:
                     st.session_state["password_correct"] = True
                     st.rerun()
@@ -27,54 +27,81 @@ def check_password():
     return True
 
 if check_password():
-    # --- 3. NOWY STYL PIN-UP / RETRO (CSS) ---
+    # --- 3. MAKSYMALNY STYL RETRO PIN-UP / DINER (CSS) ---
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Bungee+Inline&family=Montserrat:wght@400;700&display=swap');
         
-        /* Tło - miętowy pastel i delikatne kropki */
+        /* Tło - miętowy pastel i winylowe kropki */
         .stApp { 
             background-color: #a2d2ff; 
-            background-image: radial-gradient(#ffffff 15%, transparent 16%), radial-gradient(#ffffff 15%, transparent 16%);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
+            background-image: radial-gradient(#d62828 20%, transparent 20%), radial-gradient(#ffffff 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
             font-family: 'Montserrat', sans-serif;
         }
         
-        /* Karty metryk - styl Diner / Retro Fridge */
+        /* Karty metryk - styl Winyl / Retro Fridge */
         [data-testid="stMetric"] { 
             background: #fefae0 !important; 
-            border: 5px solid #ffafcc !important; 
-            border-radius: 30px 0px 30px 0px !important; 
-            box-shadow: 8px 8px 0px 0px #d62828 !important; 
-            padding: 20px !important; 
+            border: 8px solid #ffafcc !important; 
+            border-radius: 50% 10px 50% 10px !important; /* Kształt winylu */
+            box-shadow: 12px 12px 0px 0px #d62828 !important; 
+            padding: 30px !important; 
+            overflow: hidden;
+            position: relative;
+        }
+        [data-testid="stMetric"]::before { /* Motyw płyty winylowej */
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 150px; height: 150px;
+            background: #000000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.1;
+            z-index: 0;
+        }
+        [data-testid="stMetric"]::after { /* Czerwona etykieta */
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 60px; height: 60px;
+            background: #d62828;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.1;
+            z-index: 0;
         }
         [data-testid="stMetricLabel"] p { 
             color: #003049 !important; 
             font-family: 'Bungee Inline', cursive !important; 
-            font-size: 18px !important; 
+            font-size: 20px !important; 
+            position: relative; z-index: 1;
         }
         [data-testid="stMetricValue"] div { 
             color: #d62828 !important; 
             font-family: 'Pacifico', cursive !important; 
-            font-size: 40px !important; 
+            font-size: 45px !important; 
+            position: relative; z-index: 1;
         }
         
         /* Nagłówki */
         h1 { 
             color: #ffffff !important; 
             font-family: 'Pacifico', cursive !important; 
-            font-size: 4em !important; 
-            text-shadow: 4px 4px 0px #d62828, 8px 8px 0px #003049;
+            font-size: 4.5em !important; 
+            text-shadow: 5px 5px 0px #d62828, 10px 10px 0px #003049;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             border: none !important;
         }
         h2, h3 { 
             color: #003049 !important; 
             font-family: 'Bungee Inline', cursive !important; 
             text-align: center;
-            border-bottom: 3px dashed #ffafcc;
+            border-bottom: 4px dashed #ffafcc;
+            text-transform: uppercase;
         }
         
         /* Przyciski - styl starego neonu / winylu */
@@ -83,40 +110,44 @@ if check_password():
             color: white !important; 
             font-family: 'Bungee Inline', cursive !important; 
             border-radius: 50px !important; 
-            border: 3px solid #fefae0 !important;
-            font-size: 20px !important;
-            height: 3em !important;
-            box-shadow: 4px 4px 0px #003049;
+            border: 4px solid #fefae0 !important;
+            font-size: 22px !important;
+            height: 3.2em !important;
+            box-shadow: 6px 6px 0px #003049;
             transition: 0.3s;
         }
         .stButton>button:hover { 
-            transform: scale(1.05);
+            transform: scale(1.08) rotate(-3deg);
             background: #003049 !important;
         }
         
-        /* Sidebar */
+        /* Sidebar - miętowo-wiśniowy */
         [data-testid="stSidebar"] { 
             background: #ffafcc !important; 
-            border-right: 5px solid #d62828 !important; 
+            border-right: 8px solid #d62828 !important; 
         }
+        [data-testid="stSidebar"] h2 { color: white !important; border: none !important; }
         
-        /* Zakładki (Tabs) */
-        .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+        /* Zakładki (Tabs) - Neon style */
+        .stTabs [data-baseweb="tab-list"] { gap: 15px; }
         .stTabs [data-baseweb="tab"] {
             background-color: #fefae0;
-            border-radius: 15px 15px 0px 0px;
-            padding: 10px 20px;
+            border-radius: 20px 20px 0px 0px;
+            padding: 15px 30px;
             font-family: 'Bungee Inline', cursive;
             color: #003049;
+            border-bottom: 5px solid #003049;
         }
         .stTabs [aria-selected="true"] {
             background-color: #d62828 !important;
             color: white !important;
+            border-bottom: 5px solid white;
+            box-shadow: 0 0 15px #d62828;
         }
         </style>
         """, unsafe_allow_html=True)
 
-    # --- 4. POŁĄCZENIE Z DANYMI (Bez zmian w logice) ---
+    # --- 4. POŁĄCZENIE Z DANYMI ---
     @st.cache_resource
     def get_client():
         creds_dict = st.secrets["gcp_service_account"]
@@ -136,7 +167,7 @@ if check_password():
         df_inc, df_exp, df_fix, df_rat, df_sav, df_shp, df_tsk, df_pla = [data[n] for n in ["Przychody", "Wydatki", "Koszty_Stale", "Raty", "Oszczednosci", "Zakupy", "Zadania", "Planowanie"]]
         sh = get_client().open("Budzet_Data")
     except Exception as e:
-        st.error(f"🚜 Oh Honey, there's a problem: {e}"); st.stop()
+        st.error(f"🚜 Oh Honey, there's a Jukebox error: {e}"); st.stop()
 
     # Czyszczenie i konwersja
     for df in [df_inc, df_exp, df_fix, df_rat]:
@@ -183,69 +214,85 @@ if check_password():
     today_y, today_m = date.today().year, date.today().month
     _, current_total_balance = generate_ledger(today_y, today_m)
     
-    st.markdown("<h1>Milkshake & Money 1960</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>Diner Budget 1960</h1>", unsafe_allow_html=True)
     
     col_met1, col_met2 = st.columns(2)
     col_met1.metric("CASH IN PURSE", f"{current_total_balance:,.2f} $")
     days_left = calendar.monthrange(today_y, today_m)[1] - date.today().day + 1
     col_met2.metric("DAILY MILKSHAKE", f"{current_total_balance/days_left:,.2f} $" if days_left > 0 else "---")
 
-    # --- 7. TABS ---
-    t1, t2, t3, t4 = st.tabs(["🍒 RECORDS", "🏠 FIXED COSTS", "📊 JUKEBOX ANALYSIS", "🛒 GROCERY"])
+    # --- 7. TABS (ZIKONIZOWANE) ---
+    t1, t2, t3, t4 = st.tabs(["🎵 RECORDS", "🏠 DINER SETUP", "📊 JUKEBOX HIT LIST", "🍔 SODA FOUNTAIN LIST"])
 
     with t1:
+        st.subheader("📻 Rock'n'Roll Records - Sweet Income & Fancy Expense")
         c1, c2 = st.columns(2)
         with c1:
             with st.form("f_i", clear_on_submit=True):
-                st.subheader("🍭 Sweet Income")
-                t, k = st.text_input("Source"), st.number_input("Amount", step=10.0)
-                if st.form_submit_button("ADD TO PURSE"):
+                st.write("**🍭 SODA FOUNTAIN SAVINGS (PRZYCHÓD)**")
+                t, k = st.text_input("Gdzie wpadło?"), st.number_input("Ile monet?", step=10.0)
+                if st.form_submit_button("DODAJ DO PORTFELA"):
                     sh.worksheet("Przychody").append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), t, k]); st.cache_data.clear(); st.rerun()
         with c2:
             with st.form("f_e", clear_on_submit=True):
-                st.subheader("👠 Fancy Expense")
-                t, k = st.text_input("Item"), st.number_input("Price", step=1.0)
-                if st.form_submit_button("PAY NOW"):
+                st.write("**👠 RETRO RAGS & RECORDS (WYDATEK)**")
+                t, k = st.text_input("Na co?"), st.number_input("Cena", step=1.0)
+                if st.form_submit_button("ZAPŁAĆ TERAZ"):
                     sh.worksheet("Wydatki").append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), t, k, "Retro", "Variable"]); st.cache_data.clear(); st.rerun()
 
     with t2:
-        st.subheader("📻 SETUP YOUR DINER COSTS")
+        st.subheader("🏠 Diner Setup - Monthly Bills & Loan Installments")
         cf1, cf2 = st.columns(2)
         with cf1:
             with st.form("nf"):
-                n, k = st.text_input("Monthly Bill"), st.number_input("Cost")
-                if st.form_submit_button("ADD BILL"):
+                st.write("**Nowy Stały Wydatek**")
+                n, k = st.text_input("Nazwa (np. Prąd)"), st.number_input("Kwota mies.")
+                if st.form_submit_button("DODAJ OPŁATĘ"):
                     sh.worksheet("Koszty_Stale").append_row([n, k]); st.cache_data.clear(); st.rerun()
         with cf2:
             with st.form("nr"):
-                n, k = st.text_input("Loan/Car"), st.number_input("Rata")
+                st.write("**Nowa Rata**")
+                n, k = st.text_input("Nazwa raty (np. Auto)"), st.number_input("Rata")
                 s, e = st.date_input("Start"), st.date_input("End")
-                if st.form_submit_button("ADD INSTALLMENT"):
+                if st.form_submit_button("ZAPISZ HARMONOGRAM"):
                     sh.worksheet("Raty").append_row([n, k, s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d")]); st.cache_data.clear(); st.rerun()
         st.divider()
+        st.write("**Twoje aktywne obciążenia:**")
         st.dataframe(df_fix, use_container_width=True)
 
     with t3:
-        st.subheader("🎼 FINANCIAL JUKEBOX")
+        st.subheader("📊 Jukebox Analysis - Your Cashflow Hit List")
         months = {1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN", 7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"}
         c_s1, c_s2 = st.columns(2)
-        s_y = c_s1.selectbox("Year", [2026, 2025])
-        s_m = c_s2.selectbox("Month", range(1, 13), format_func=lambda x: months[x], index=date.today().month-1)
+        s_y = c_s1.selectbox("Wybierz rok", [2026, 2025])
+        s_m = c_s2.selectbox("Miesiąc", range(1, 13), format_func=lambda x: months[x], index=date.today().month-1)
         df_l, _ = generate_ledger(s_y, s_m)
+        
+        # Wygląd wyciągu bankowego z tamtych lat
+        st.write("**Twój historyczny ślad finansowy:**")
         st.dataframe(df_l.style.format({"Zmiana": "{:,.2f} $", "Saldo": "{:,.2f} $"}), use_container_width=True, hide_index=True)
-        fig = px.line(df_l, x=df_l.index, y="Saldo", title="Wealth Journey", color_discrete_sequence=['#d62828'])
+        
+        # Wykres salda - Retro color
+        fig = px.area(df_l, x=df_l.index, y="Saldo", title=f"Wędrówka Twojego Bogactwa ({months[s_m]})", 
+                       labels={"Saldo": "Stan Sejfu ($)"})
+        fig.update_traces(line_color='#d62828', fillcolor='rgba(214, 40, 40, 0.1)')
         st.plotly_chart(fig, use_container_width=True)
 
     with t4:
-        st.subheader("🛒 GROCERY LIST")
-        st.write(df_shp["Produkt"].tolist())
-        if st.button("CLEAR THE CART"):
+        st.subheader("🛒 GROCERY SHOPPING LIST - Diner Supplies")
+        if not df_shp.empty:
+            st.write("**Lista Zakupów:**", df_shp["Produkt"].tolist())
+        else:
+            st.write("**Karta zakupów pusta.**")
+            
+        if st.button("WYCZYŚĆ KARTĘ I ZAMKNIJ DINER"):
             sh.worksheet("Zakupy").clear(); sh.worksheet("Zakupy").append_row(["Data", "Produkt"]); st.cache_data.clear(); st.rerun()
 
     with st.sidebar:
-        st.markdown("<h2 style='color: white !important;'>💎 THE VAULT</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: white !important;'>💎 THE VAULT (SEJF)</h2>", unsafe_allow_html=True)
         st.metric("SAVINGS", f"{s_sav:,.2f} $")
-        if st.button("🚜 HARVEST SURPLUS"):
+        st.divider()
+        if st.button("🚜 HARVEST SURPLUS (ŻNIWA)"):
             if current_total_balance > 0:
                 sh.worksheet("Oszczednosci").update_acell('A2', str(s_sav + current_total_balance))
                 st.balloons(); st.cache_data.clear(); time.sleep(1); st.rerun()
